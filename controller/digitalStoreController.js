@@ -140,12 +140,22 @@ exports.getProducts = async (req, res) => {
 exports.getProductDetails = async (req, res) => {
   try {
     const { idOrSlug } = req.params;
+    const isPublicLookup = req.route?.path === "/public/product/:idOrSlug";
     let product;
 
     if (idOrSlug.match(/^[0-9a-fA-F]{24}$/)) {
-      product = await DigitalProduct.findById(idOrSlug);
+      product = isPublicLookup
+        ? await DigitalProduct.findOne({ _id: idOrSlug, status: "active" })
+        : await DigitalProduct.findById(idOrSlug);
     } else {
-      product = await DigitalProduct.findOne({ slug: idOrSlug.toLowerCase() });
+      product = isPublicLookup
+        ? await DigitalProduct.findOne({
+            slug: idOrSlug.toLowerCase(),
+            status: "active",
+          })
+        : await DigitalProduct.findOne({
+            slug: idOrSlug.toLowerCase(),
+          });
     }
 
     if (!product) {
@@ -161,7 +171,6 @@ exports.getProductDetails = async (req, res) => {
     });
   }
 };
-
 /**
  * Update a digital product (creator only)
  */
